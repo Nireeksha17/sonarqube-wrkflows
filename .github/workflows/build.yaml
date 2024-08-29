@@ -1,0 +1,50 @@
+on:
+  push:
+    branches:
+      - main
+jobs:
+ sonarscan:
+    uses: sonarqube-wrkflows/.github/workflows/sonar-ci.yml@main
+    secrets: inherit
+    
+    # secrets:
+    #   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    #   SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    
+      
+
+ manual_approval_fail:
+    name: sonar-scan-fail
+    needs: sonarscan
+    if: ${{ needs.sonarscan.outputs.sonar_status == 'FAILED' }} 
+    runs-on: k8s   
+    environment: manual-approval 
+    steps:
+      - name: Manual Approval
+        run: 
+          echo $sonar_status
+          echo "waiting for approval..."
+
+ manual_approval_warn:
+    name: sonar-scan-warn
+    needs: sonarscan
+    if: ${{ needs.sonarscan.outputs.sonar_status == 'WARN' }} 
+    runs-on: k8s    
+    environment: manual-approval 
+    steps:
+      - name: Manual Approval
+        run: 
+          echo $sonar_status
+          echo "waiting for approval..."
+    
+    
+ build:
+    name: Build-code
+    needs: sonarscan
+    if: ${{ needs.sonarscan.outputs.sonar_status == 'PASSED' }}
+    runs-on: k8s
+    steps:
+      - name: Build
+        run: 
+          echo $sonar_status
+          echo "Building the code..."
